@@ -32,16 +32,16 @@ def post_signal():
         return jsonify({"error" : f"Unsupported method. Allowed: {sorted(ALLOWED_METHODS)}"}), 400
 
     if not isinstance(payload, str) or len(payload) == 0 or len(payload) >  MAX_PAYLOAD_LEN:
-        return jsonify({"error": "payload must be base64 strin <=16KB"}), 400
+        return jsonify({"error": "payload must be base64 string <=16KB"}), 400
     if not is_base64(payload):
         return jsonify({"error": "payload must be valid base64"}), 400
     
     #AES-GCM NEED iv + salt
     if method == "AES-GCM":
         if not isinstance(meta, dict) or "iv" not in meta or "salt" not in meta:
-            return jsonify({"error": "meta.iv and meta.salt require for AES-GCM"}), 400
+            return jsonify({"error": "meta.iv and meta.salt required for AES-GCM"}), 400
         if not (isinstance(meta["iv"], str) and is_base64(meta["iv"])):
-            return jsonify({"error": "meta.tv must be base64"}), 400
+            return jsonify({"error": "meta.iv must be base64"}), 400
         if not (isinstance(meta["salt"], str) and is_base64(meta["salt"])):
             return jsonify({"error": "meta.salt must be base64"}), 400
         
@@ -65,7 +65,7 @@ def get_signals():
         since_id = request.args.get("since_id")
         since = int(since_id) if since_id is not None else None
     except ValueError:
-        return jsonify({"error": "limit and since_id must be integers"}). 400
+        return jsonify({"error": "limit and since_id must be integers"}), 400
     
     rows = select_latest(limit=min(max(limit, 1), 200), since_id=since)
     return jsonify([
