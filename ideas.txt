@@ -1,0 +1,31 @@
+Signal Send - send signals & recieve them
+Use a server or smth to do this stuff??
+
+Public "void" or area where people can both put in encrypted signals and also find random ones as well
+
+Server stores ciphertext + metadata
+
+Server:
+
+Backend:
+    Flash + SQLite
+
+Frontend:
+    Html + Js
+
+Encrypt: (GPT SHOWED ME HOW TO DO THIS)
+    KDF: PBKDF2 (portable) with random 16-byte salt.
+    AEAD: AES-GCM with 12-byte iv.
+
+
+HAVE ENCRYPT/DECRYT BE CLIENT SIDE THING
+
+Classic  cipher (shift all letters by 1 or smth)
+    RESAERCH OTHER TYPES AS well
+AES-GCM Broadcast mode
+Asymmetric (aka keypair) mode 
+
+CURRENT GOAL:
+    GET THE SEVER WORKING AND DONE
+
+
