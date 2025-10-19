@@ -43,3 +43,71 @@ async function decryptWithPassPhrase(passphrase, payloadB64, meta) {
 //UI TIME NOW
 const byId = (id) => document.getElementById(id);
 
+byId("btn-post").onclick = async () => {
+    const text = byId("plaintext").value.trim();
+    const pass = byId("passphrase").value;
+    const author = byId("author");
+    const out = byId("post-result");
+
+    if(!text || !pass) {
+        out.textContent = "Please provide plaintext and passphrase.";
+        return;
+    }
+    try {
+        const { payload, meta } = await encryptWithPassphrase(pass, text);
+        const body = { method: "AES-GCM", payload, meta, author_hint: author };
+        const res = await fetch(`${window.API_BASE}/signals`, {
+            method: "POST", headers: {"Content-type":"application/json"},
+            body: JSON.stringify(body)
+        });
+        const js = await res.json();
+        if (!res.ok) throw new Error(js.error || res.statusText);
+        out.textContent = `Posted! id=${js.id}`;
+        byId("plaintext").value="";
+    } catch (e) {
+        out.textContent = `Error: ${e.message}`;
+    }
+};
+
+byId("btn-fetch").onclick = async () => {
+    const container = byId("signals");
+    container.innerHTML = "";
+    const res = await fetch(`${window.API_BASE}/signals/random?n=10`);
+    const list = await res.json();
+    list.forEach(sig => {
+        const div = document.createElement("div");
+        div.className = "signal";
+        const ts = new Date(sig.created_at * 1000).toISOString();
+        div.innerHTML = `
+            <div class="meta">#${sig.id} • ${ts} • method=${sig.method} • author=${sig.author_hint ?? "?"}</div>
+            <details>
+                <summary>ciphertext (base64)</summary>
+                <pre>${sig.payload}</pre>
+            </details>
+            <details>
+                <summary>meta</summary>
+                <pre>${JSON.stringify(sig.meta, null, 2)}</pre>
+            </details>
+            <div style="margin-top:8px;">
+                <input type="password" placeholder="Try passphrase…" class="pp" />
+                <button class="try-dec">Try decrypt</button>
+            </div>
+            <pre class="dec-result"></pre>
+        `;
+
+        const btn = div.querySelector(".try-dec");
+        const pp = div.querySelector(".pp");
+        const result = div.querySelector(".dec-result");
+        btn.onclick = async () => {
+            result.textContent = "Decrypting...";
+            try {
+                const text = await decryptWithPassPhrase(pp.value, sig.payload, sig.meta)
+                result.textContent = text;
+            } catch {
+                result.textContent = "Failed to decrypt (wrong passphrase or corrupted data).";
+            }
+        };
+        container.appendChild(div);
+    })
+}
+
