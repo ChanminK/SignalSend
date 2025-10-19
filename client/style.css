@@ -10,3 +10,15 @@ button:hover { filter: brightness(1.05); }
 .meta { font-size: 12px; color: #9ab; }
 pre, code { white-space: pre-wrap; word-wrap: break-word; }
 
+input[type="number"] {
+    background: #0b0f14;
+    color: #e7eff6;
+    border: 1px solide #1f2a3a;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+details > button {
+    margin-top: 6px;
+}
+

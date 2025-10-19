@@ -24,6 +24,12 @@
         <label>Author hint (optional)</label>
         <input id="author" type="text" placeholder="anon"/>
 
+        <label>Tag (optional)</label>
+        <input id="tag" type="text" placeholder="e.g., moon"/>
+
+        <label>TTL days (optional)</label>
+        <input id="ttl" type="number" min="1" max="365" placeholder="3.g., 7"/>
+
         <button id="btn-post">Encrypt & Post</button>
         <pre id="post-result"></pre>
     </section>
@@ -32,6 +38,8 @@
         <h2>Discover Random Signals</h2>
         <button id="btn-fetch">Fetch 10 Random</button>
         <div id="signals"></div>
+
+        <input id="filterTag" type="text" placeholder="filter by tag (optional)"/>
     </section>
 
     <footer>

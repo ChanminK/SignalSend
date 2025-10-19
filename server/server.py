@@ -52,6 +52,18 @@ def post_signal():
             if not isinstance(tag, str) or len(tag) > 64:
                 return jsonify({"error": "meta.tag must be a string up to 64 chars"}), 400
 
+    # Getting TTL handled
+    expires_at = None
+    ttl_days = meta.get("ttl_days")
+    if ttl_days is not None:
+        try:
+            ttl_days = int(ttl_days)
+            if ttl_days < 1 or ttl_days > 365:
+                raise ValueError()
+            expires_at = int(time.time()) + ttl_days * 86400
+        except Exception:
+            return jsonify({"error": "meta.ttl_days must be an integer between 1 and 365"}), 400
+
         new_id = insert_signal(
             created_at=int(time.time()),
             method=method,
@@ -59,7 +71,8 @@ def post_signal():
             meta_json=meta_json,
             author_hint=author_hint,
             size_bytes=size_bytes,
-            tag=tag
+            tag=tag,
+            expires_at=expires_at
         )
         return jsonify({"id": new_id}), 201
     
@@ -73,7 +86,8 @@ def get_signals():
     except ValueError:
         return jsonify({"error": "limit and since_id must be integers"}), 400
     
-    rows = select_latest(limit=min(max(limit, 1), 200), since_id=since, tag=tag)
+    now = int(time.time())
+    rows = select_latest(limit=min(max(limit, 1), 200), since_id=since, tag=tag, now = now)
     return jsonify([
         {
             "id": r["id"],
@@ -82,7 +96,8 @@ def get_signals():
             "payload": r["payload_b64"],
             "meta": json.loads(r["meta_json"]),
             "author_hint": r["author_hint"],
-            "tag": r["tag"]
+            "tag": r["tag"],
+            "expires_at": r["expires_at"]
         } for r in rows
     ])
 
@@ -95,7 +110,8 @@ def get_random():
     n = min(max(n,1), 50)
     tag = request.args.get("tag")
 
-    rows = select_random(n, tag=tag)
+    row = int(time.time())
+    rows = select_random(n, tag=tag, now=now)
     return jsonify([
         {
             "id": r["id"],
@@ -104,7 +120,8 @@ def get_random():
             "payload": r["payload_b64"],
             "meta": json.loads(r["meta_json"]),
             "author_hint": r["author_hint"],
-            "tag": r["tag"]
+            "tag": r["tag"], 
+            "expires_at": r["expires_at"]
         } for r in rows
     ])
 

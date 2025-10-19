@@ -47,6 +47,8 @@ byId("btn-post").onclick = async () => {
     const text = byId("plaintext").value.trim();
     const pass = byId("passphrase").value;
     const author = (byId("author").value || "anon").trim();
+    const tag = (byId("tag")?.value || "").trim();
+    const ttlStr = (byId("ttl")?.value || "").trim();
     const out = byId("post-result");
 
     if(!text || !pass) {
@@ -55,6 +57,9 @@ byId("btn-post").onclick = async () => {
     }
     try {
         const { payload, meta } = await encryptWithPassphrase(pass, text);
+        if (tag) meta.tag = tag;
+        if (ttlStr) meta.ttl_days = parseInt(ttlStr, 10);
+        
         const body = { method: "AES-GCM", payload, meta, author_hint: author };
         const res = await fetch(`${window.API_BASE}/signals`, {
             method: "POST", headers: {"Content-Type":"application/json"},
@@ -72,21 +77,33 @@ byId("btn-post").onclick = async () => {
 byId("btn-fetch").onclick = async () => {
     const container = byId("signals");
     container.innerHTML = "";
-    const res = await fetch(`${window.API_BASE}/signals/random?n=10`);
+    const tag = (byId("filterTag")?.value || "").trim();
+    const qs = tag ? `?n=10&tag=${encodeURIComponent(tag)}` : `?n=10`;   
+    const res = await fetch(`${window.API_BASE}/signals/random${qs}`);
     const list = await res.json();
+    if (!Array.isArray(list) || list.length === 0) {
+        container.innerHTML = `<div class="meta">No signals found${tag ? ` for tag "${tag}"` : ""}.</div>`;
+        return;
+    }
     list.forEach(sig => {
         const div = document.createElement("div");
         div.className = "signal";
         const ts = new Date(sig.created_at * 1000).toISOString();
         div.innerHTML = `
-            <div class="meta">#${sig.id} • ${ts} • method=${sig.method} • author=${sig.author_hint ?? "?"}</div>
+            <div class="meta">
+                #${sig.id} • ${ts} • method=${sig.method} • author=${sig.author_hint ?? "?"}
+                ${sig.tag ? `• tag=${sig.tag}` : ``}
+                ${sig.expires_at ? `• expires=${new Date(sig.expires_at*1000).toISOString()}` : ``}
+            </div>
             <details>
                 <summary>ciphertext (base64)</summary>
-                <pre>${sig.payload}</pre>
+                <pre class="ct">${sig,payload}</pre>
+                <button class="copy-ct">Copy ciphertext</button>
             </details>
             <details>
                 <summary>meta</summary>
-                <pre>${JSON.stringify(sig.meta, null, 2)}</pre>
+                <pre class = "meta-json">${JSON.stringify(sig.meta, null, 2)}</pre>
+                <button class="copy-meta">Copy meta</button>
             </details>
             <div style="margin-top:8px;">
                 <input type="password" placeholder="Try passphrase…" class="pp" />
@@ -94,6 +111,10 @@ byId("btn-fetch").onclick = async () => {
             </div>
             <pre class="dec-result"></pre>
         `;
+
+        const copy = (text) => navigator.clipboard?.writeText(text);
+        div.querySelector(".copy-ct").onclick = () => copy(div.querySelector(".ct").textContent);
+        div.querySelector(".copy-ct").onclick = () => copy(div.querySelector(".meta-json").textContent);
 
         const btn = div.querySelector(".try-dec");
         const pp = div.querySelector(".pp");
