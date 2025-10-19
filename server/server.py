@@ -47,6 +47,10 @@ def post_signal():
         
         meta_json = json.dumps(meta)
         size_bytes = len(payload.encode("utf-8"))
+        tag = meta.get("tag")
+        if tag is not None:
+            if not isinstance(tag, str) or len(tag) > 64:
+                return jsonify({"error": "meta.tag must be a string up to 64 chars"}), 400
 
         new_id = insert_signal(
             created_at=int(time.time()),
@@ -54,7 +58,8 @@ def post_signal():
             payload_b64=payload,
             meta_json=meta_json,
             author_hint=author_hint,
-            size_bytes=size_bytes
+            size_bytes=size_bytes,
+            tag=tag
         )
         return jsonify({"id": new_id}), 201
     
@@ -64,10 +69,11 @@ def get_signals():
         limit = int(request.args.get("limit", 50))
         since_id = request.args.get("since_id")
         since = int(since_id) if since_id is not None else None
+        tag = request.args.get("tag")
     except ValueError:
         return jsonify({"error": "limit and since_id must be integers"}), 400
     
-    rows = select_latest(limit=min(max(limit, 1), 200), since_id=since)
+    rows = select_latest(limit=min(max(limit, 1), 200), since_id=since, tag=tag)
     return jsonify([
         {
             "id": r["id"],
@@ -75,7 +81,8 @@ def get_signals():
             "method": r["method"],
             "payload": r["payload_b64"],
             "meta": json.loads(r["meta_json"]),
-            "author_hint": r["author_hint"]
+            "author_hint": r["author_hint"],
+            "tag": r["tag"]
         } for r in rows
     ])
 
@@ -86,8 +93,9 @@ def get_random():
     except ValueError:
         return jsonify({"error": "n must be an integer"}), 400
     n = min(max(n,1), 50)
+    tag = request.args.get("tag")
 
-    rows = select_random(n)
+    rows = select_random(n, tag=tag)
     return jsonify([
         {
             "id": r["id"],
@@ -95,7 +103,8 @@ def get_random():
             "method": r["method"],
             "payload": r["payload_b64"],
             "meta": json.loads(r["meta_json"]),
-            "author_hint": r["author_hint"]
+            "author_hint": r["author_hint"],
+            "tag": r["tag"]
         } for r in rows
     ])
 

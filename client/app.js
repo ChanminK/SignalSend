@@ -8,7 +8,7 @@ const b64 = {
 async function deriveKeyPBKDF2(passphrase, saltBytes) {
     const enc = new TextEncoder();
     const keyMaterial = await crypto.subtle.importKey(
-        "raw", enc.encode(passphrase), {name: "PBKDF2"}, false, [deriveKey]
+        "raw", enc.encode(passphrase), {name: "PBKDF2"}, false, ["deriveKey"]
     );
     return crypto.subtle.deriveKey(
         { name: "PBKDF2", salt: saltBytes, iterations: 200000, hash: "SHA-256" },
@@ -31,7 +31,7 @@ async function encryptWithPassphrase(passphrase, plaintext) {
     };
 }
 
-async function decryptWithPassPhrase(passphrase, payloadB64, meta) {
+async function decryptWithPassphrase(passphrase, payloadB64, meta) {
     const salt = b64.decode(meta.salt);
     const iv = b64.decode(meta.iv);
     const key = await deriveKeyPBKDF2(passphrase, salt);
@@ -46,7 +46,7 @@ const byId = (id) => document.getElementById(id);
 byId("btn-post").onclick = async () => {
     const text = byId("plaintext").value.trim();
     const pass = byId("passphrase").value;
-    const author = byId("author");
+    const author = (byId("author").value || "anon").trim();
     const out = byId("post-result");
 
     if(!text || !pass) {
@@ -57,7 +57,7 @@ byId("btn-post").onclick = async () => {
         const { payload, meta } = await encryptWithPassphrase(pass, text);
         const body = { method: "AES-GCM", payload, meta, author_hint: author };
         const res = await fetch(`${window.API_BASE}/signals`, {
-            method: "POST", headers: {"Content-type":"application/json"},
+            method: "POST", headers: {"Content-Type":"application/json"},
             body: JSON.stringify(body)
         });
         const js = await res.json();
@@ -101,7 +101,7 @@ byId("btn-fetch").onclick = async () => {
         btn.onclick = async () => {
             result.textContent = "Decrypting...";
             try {
-                const text = await decryptWithPassPhrase(pp.value, sig.payload, sig.meta)
+                const text = await decryptWithPassphrase(pp.value, sig.payload, sig.meta)
                 result.textContent = text;
             } catch {
                 result.textContent = "Failed to decrypt (wrong passphrase or corrupted data).";

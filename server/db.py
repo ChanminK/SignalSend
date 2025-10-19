@@ -19,35 +19,52 @@ def init_db():
             payload_b64 TEXT NOT NULL,
             meta_json TEXT NOT NULL,
             author_hint TEXT,
-            size_bytes INTEGER NOT NULL
+            size_bytes INTEGER NOT NULL,
+            tag TEXT
         );
         """)
+        try:
+            c.execute("ALTER TABLE signals ADD COLUMN tag TEXT;")
+        except Exception:
+            pass
         c.commit()
 
-def insert_signal(created_at:int, method:str, payload_b64:str, meta_json:str, author_hint:str|None, size_bytes:int) -> int:
+def insert_signal(created_at:int, method:str, payload_b64:str, meta_json:str,author_hint:str|None, size_bytes:int, tag:str|None) -> int:
     with get_conn() as c:
         cur = c.cursor()
         cur.execute(
-            "INSERT INTO signals (created_at,method,payload_b64,meta_json,author_hint,size_bytes) VALUES (?,?,?,?,?,?)",
-            (created_at, method, payload_b64, meta_json, author_hint, size_bytes)
+            "INSERT INTO signals (created_at,method,payload_b64,meta_json,author_hint,size_bytes, tag) VALUES (?,?,?,?,?,?,?)",
+            (created_at, method, payload_b64, meta_json, author_hint, size_bytes, tag)
         )
         c.commit()
         return cur.lastrowid
     
-def select_latest(limit:int=50, since_id:int|None=None) -> Iterable[sqlite3.Row]:
-    q= "SELECT id, created_at, method, payload_b64, meta_json, author_hint FROM signals"
+def select_latest(limit:int=50, since_id:int|None=None, tag:str|None=None):
+    q = "SELECT id, created_at, method, payload_b64, meta_json, author_hint, tag FROM signals"
     params: Tuple[Any,...] = ()
+    where = []
     if since_id is not None:
-        q += "WHere id > ?"
-        params = (since_id,)
-    q+= " ORDER BY id DESC LIMIT ?"
-    params = params + (limit,)
+        where.append("id > ?")
+        params += (since_id,)
+    if tag:
+        where.append("tag = ?")
+        params += (tag,)
+    if where:
+        q += " WHERE " + " AND ".join(where)
+    q += " ORDER BY id DESC LIMIT ?"
+    params += (limit,)
     with get_conn() as c:
         return c.execute(q, params).fetchall()
     
-def select_random(n:int=10) -> Iterable[sqlite3.Row]:
+def select_random(n:int=10, tag:str|None=None):
     with get_conn() as c:
-        return c.execute(
-            "SELECT id, created_a, method, payload_b64, meta_json, author_hint FROM signals ORDER BY RANDOM() LIMIT ?",
-            (n, )
-        ).fetchall()
+        if tag:
+            return c.execute(
+                "SELECT id, created_at, method, payload_b64, meta_json, author_hint, tag FROM signals WHERE tag = ? ORDER BY RANDOM() LIMIT ?", 
+                (tag, n)
+            ).fetchall()
+        else:
+            return c.execute(
+                "SELECT id, created_at, method, payload_b64, meta_json, author_hint, tag FROM signals ORDER BY RANDOM() LIMIT ?",
+                (n,)
+            ).fetchall()
