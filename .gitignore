@@ -1,0 +1,34 @@
+# venv stuff
+.venv/
+venv/
+ENV/
+env/
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+*.pytest_cache/
+.pytest_cache/
+.mypy_cache/
+
+# SQLITE
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs + temp
+*.log
+*.tmp
+*.swp
+
+# Editor or OS stuff
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# web + node
+node_modules/
+dist/
+build/
+.cache/
