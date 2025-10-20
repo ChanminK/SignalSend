@@ -42,6 +42,19 @@
         <input id="filterTag" type="text" placeholder="filter by tag (optional)"/>
     </section>
 
+    <section class="panel">
+        <h2>Latest Signals</h2>
+        <div style="display:flex; gap:8px; align-items:cemter; margin-bottom:8px">
+            <input if="latestFilterTag" type="text" placeholder ="filter by tag (optional)"/>
+            <button id="btn-latest">Load Latest</button>
+            <label style="font-size:12px; display:flex; align-items:center; gap:6px;">
+                <input type="checkbox" id="latestAuto" />
+                auto-refresh (15s)
+            </label>
+        </div>
+        <div id="latest"></div>
+    </section>
+
     <footer>
         <small>WARNING: Only AES-GCM is supported in this MVP. Don't post real secrets!!!</small>
     </footer>

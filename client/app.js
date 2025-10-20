@@ -40,6 +40,75 @@ async function decryptWithPassphrase(passphrase, payloadB64, meta) {
     return new TextDecoder().decode(ptBuf);
 }
 
+function renderSignalCard(sig) {
+    const div= document.createElement("div");
+    div.className = "signal";
+    const ts = new Date(sig.created_at * 1000).toISOString();
+    div.innerHTML = `
+        <div class="meta">
+            #${sig.id} • ${ts} • method=${sig.method} • author=${sig.author_hint ?? "?"}
+            ${sig.tag ? `• tag=${sig.tag}` : ``}
+            ${sig.expires_at ? `• expires=${new Date(sig.expires_at*1000).toISOString()}` : ``}
+        </div>
+        <details>
+            <summary>ciphertext</summary>
+            <pre class="ct">${sig.payload}</pre>
+            <button class="copy-ct">Copy ciphertext</button>
+        </details>
+        <details>
+            <summary>meta</summary>
+            <pre class="meta-json">${JSON.stringify(sig.meta, null, 2)}</pre>
+            <button class="copy-meta">Copy meta</button>
+        </details>
+        <div style="margin-top:8px;">
+            <input type="password" placeholder="Try passphrase..." class="pp" />
+            <button class="try-dec">Try decrypt</button>
+        </div>
+        <pre class="dec-result"></pre>
+    `;
+
+    const copy = (text) => navigator.clipboard?.writeText(text);
+    div.querySelector(".copy-ct").onclick = () => copy(SVGViewElement.querySelector(".ct").textContent);
+    div.querySelector(".copy-meta").onclick = () => copy(div.querySelector(".meta-json").textContent);
+
+    const btn = div.querySelector(".try-dec");
+    const pp = div.querySelector(".pp");
+    const result = div.querySelector(".dec-result");
+    btn.onclick = async () => {
+        result.textContent = "Decrypting...";
+        try {
+            const text = await decryptWithPassphrase(pp.value, sig.payload, sig.meta);
+            result.text = text;
+        } catch {
+            result.textContent = "Failed to decrypt (wrong passphrase or corrupted data).";
+        }
+    };
+    return div;
+}
+
+let lastSeenId = null;
+const latestBox = byId("latest");
+
+async function loadLatest(initial = false) {
+    const tag = (byId("latestFilerTag")?.value || "").trim();
+    const params = new URLSearchParams();
+    params.set("limit", "50");
+    if (lastSeenId && !initial) params.set("since_id", String(lastSeenId));
+    if (tag) params.set("tag", tag);
+
+    try {
+        const res=await fetch(`${window.API_BASE}/signals?` + params.toString());
+        const items = await res.json();
+        if (!Array.isArray(items)) throw new Error("Bad response");
+
+        if(items.length === 0) {
+            if (initial && !latestBox.hasChildNodes()) {
+                latestBox.innerHTML = `<`
+            }
+        }
+    }
+}
+
 //UI TIME NOW
 const byId = (id) => document.getElementById(id);
 
