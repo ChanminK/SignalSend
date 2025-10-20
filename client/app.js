@@ -5,6 +5,33 @@ const b64 = {
     decode: (b64str) => Uint8Array.from(atob(b64str), c => c.charCodeAt(0))
 };
 
+// VIGENERE HELPERS
+const ALPH = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const cleanAlpha = s => (s || "").toUpperCase().replace(/[^A-Z]/g, "");
+function vigEnc(plaintext, key) {
+    const pt = cleanAlpha(plaintext), k = cleanAlpha(key);
+    if (!k) throw new Error("Key required for Vigenère");
+    let out = "";
+    for (let i = 0; i < pt.length; i++) {
+        const p = ALPH.indexOf(pt[i]);
+        const shift = ALPH.indexOf(k[i % k.length]);
+        out += ALPH[(p + shift) % 26];
+    }
+    return out;
+}
+
+function vigDec(cipher, key) {
+  const ct = cleanAlpha(cipher), k = cleanAlpha(key);
+  if (!k) throw new Error("Key required for Vigenère");
+  let out = "";
+  for (let i = 0; i < ct.length; i++) {
+    const c = ALPH.indexOf(ct[i]);
+    const shift = ALPH.indexOf(k[i % k.length]);
+    out += ALPH[(c - shift + 26) % 26];
+  }
+  return out;
+} 
+
 async function deriveKeyPBKDF2(passphrase, saltBytes) {
     const enc = new TextEncoder();
     const keyMaterial = await crypto.subtle.importKey(
@@ -144,6 +171,7 @@ byId("btn-post").onclick = async () => {
     const text = byId("plaintext").value.trim();
     const pass = byId("passphrase").value;
     const author = (byId("author").value || "anon").trim();
+    const mode = byId("mode").value;
     const tag = (byId("tag")?.value || "").trim();
     const ttlStr = (byId("ttl")?.value || "").trim();
     const out = byId("post-result");
@@ -219,7 +247,15 @@ byId("btn-fetch").onclick = async () => {
         btn.onclick = async () => {
             result.textContent = "Decrypting...";
             try {
-                const text = await decryptWithPassphrase(pp.value, sig.payload, sig.meta)
+                let text;
+                if (sig.method === "AES-GCM") {
+                    text = await decryptWithPassphrase(pp.value, sig.payload, sig.meta);
+                } else if (sig.method === "VIGENERE") {
+                    const cipher = atob(sig.payload);
+                    text = vigDec(cipher, pp.value);
+                } else {
+                    throw new Error(`Unsupported method: ${sig.method}`);
+                }
                 result.textContent = text;
             } catch {
                 result.textContent = "Failed to decrypt (wrong passphrase or corrupted data).";

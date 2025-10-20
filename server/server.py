@@ -4,6 +4,23 @@ import time, base64, json
 
 from db import init_db, insert_signal, select_latest, select_random
 
+
+RATE_WINDOW_SEC = 60
+RATE_MAX_POSTS = 30
+
+_ip_hits = defaultdict(deque)
+
+def too_many_posts(ip: str) -> bool:
+    q = _ip_hits[ip]
+    t = now()
+    # prune old timestamps
+    while q and t - q[0] > RATE_WINDOW_SEC:
+        q.popleft()
+    if len(q) >= RATE_MAX_POSTS:
+        return True
+    q.append(t)
+    return False
+
 app = Flask(__name__)
 CORS(app)
 
@@ -19,6 +36,9 @@ def is_base64(s: str) -> bool:
     
 @app.post("/signals")
 def post_signal():
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr) or "?"
+    if too_many_posts(ip):
+       return jsonify({"error": "rate limit: too many posts"}), 429
     data = request.get_json(silent = True)
     if not data:
         return jsonify({"error": "JSON body required"}), 400

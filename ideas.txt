@@ -28,4 +28,17 @@ Asymmetric (aka keypair) mode
 CURRENT GOAL:
     GET THE SEVER WORKING AND DONE
 
+STUFF LEFT NOW: 
 
+Optional polish (quick wins)
+    Latest feed (if not already pasted).
+    Hidden tags: client stores `tag_hash = SHA-256(tag)` and filters by hash; stop exposing raw tag.
+    Auto cleanup expired rows (call a `cleanup_expired()` helper on each GET or via a tiny cron script).
+    Unit tests for crypto round-trips and API contracts (pytest).
+
+STRETCH GOALS:
+    X25519-AES asymmetric mode (ephemeral ECDH + HKDF + AES-GCM).
+    Rate limit persistence** (Redis) + IP allowlist for demo hosts.
+    PostgreSQL + proper indices.
+    Attachments: client-side encrypted blobs stored in S3/minio.
+    Admin/report endpoints and a small admin page.
