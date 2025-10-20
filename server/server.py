@@ -1,6 +1,18 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import time, base64, json
+import os
+
+if __name__ == "__main__":
+    init_db()
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
+
+from flask_cors import CORS
+CORS(app, resources={r"/*": {"origins": [
+    "http://127.0.0.1:8080",
+    "http://localhost:8080",
+    "https://your-frontend.vercel.app"
+]}})
 
 from db import init_db, insert_signal, select_latest, select_random
 
