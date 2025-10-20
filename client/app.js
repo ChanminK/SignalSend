@@ -103,11 +103,39 @@ async function loadLatest(initial = false) {
 
         if(items.length === 0) {
             if (initial && !latestBox.hasChildNodes()) {
-                latestBox.innerHTML = `<`
+                latestBox.innerHTML = `<div class="meta">No signals yet${tag ? ` for tag "${tag}"` : ""}.</div>`;
             }
+            return;
+        }
+
+        const maxId = Math.max(...items.map(x => x.id));
+        if (!lastSeenId || maxId > lastSeenId) lastSeenId = maxId;
+
+        items.reverse().forEach(sig => {
+            const card = renderSignalCard(sig);
+            latestBox.prepend(card);
+        });
+    } catch (e) {
+        console.error(e);
+        if (inital && !latestBox.hasChildNodes()) {
+            latestBox.innerHTML = `<div class="meta">Failed to load latest: ${e.message}</div>`;
         }
     }
 }
+
+byId("btn-latest").onclick = async () => {
+    await loadLatest(true);
+};
+
+let autoTimer = null;
+byId("latestAuto").onchange = (e) => {
+    if(e.target.checked) {
+        loadLatest(true);
+        autoTimer = null;
+    }
+};
+
+loadLatest(true);
 
 //UI TIME NOW
 const byId = (id) => document.getElementById(id);

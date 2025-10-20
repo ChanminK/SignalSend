@@ -8,7 +8,7 @@ app = Flask(__name__)
 CORS(app)
 
 MAX_PAYLOAD_LEN = 16_384
-ALLOWED_METHODS = {"AES-GCM"}
+ALLOWED_METHODS = {"AES-GCM", "VIGENERE"}
 
 def is_base64(s: str) -> bool:
     try:
