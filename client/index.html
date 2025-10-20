@@ -33,7 +33,7 @@
         <input id="tag" type="text" placeholder="e.g., moon"/>
 
         <label>TTL days (optional)</label>
-        <input id="ttl" type="number" min="1" max="365" placeholder="3.g., 7"/>
+        <input id="ttl" type="number" min="1" max="365" placeholder="e.g., 7"/>
 
         <button id="btn-post">Encrypt & Post</button>
         <pre id="post-result"></pre>
@@ -49,8 +49,8 @@
 
     <section class="panel">
         <h2>Latest Signals</h2>
-        <div style="display:flex; gap:8px; align-items:cemter; margin-bottom:8px">
-            <input if="latestFilterTag" type="text" placeholder ="filter by tag (optional)"/>
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px">
+            <input id="latestFilterTag" type="text" placeholder="filter by tag (optional)"/>
             <button id="btn-latest">Load Latest</button>
             <label style="font-size:12px; display:flex; align-items:center; gap:6px;">
                 <input type="checkbox" id="latestAuto" />

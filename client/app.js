@@ -5,6 +5,8 @@ const b64 = {
     decode: (b64str) => Uint8Array.from(atob(b64str), c => c.charCodeAt(0))
 };
 
+const byId = (id) => document.getElementById(id);
+
 // VIGENERE HELPERS
 const ALPH = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const cleanAlpha = s => (s || "").toUpperCase().replace(/[^A-Z]/g, "");
@@ -78,7 +80,7 @@ function renderSignalCard(sig) {
             ${sig.expires_at ? `• expires=${new Date(sig.expires_at*1000).toISOString()}` : ``}
         </div>
         <details>
-            <summary>ciphertext</summary>
+            <summary>ciphertext (base64)</summary>
             <pre class="ct">${sig.payload}</pre>
             <button class="copy-ct">Copy ciphertext</button>
         </details>
@@ -95,17 +97,25 @@ function renderSignalCard(sig) {
     `;
 
     const copy = (text) => navigator.clipboard?.writeText(text);
-    div.querySelector(".copy-ct").onclick = () => copy(SVGViewElement.querySelector(".ct").textContent);
+    div.querySelector(".copy-ct").onclick = () => copy(div.querySelector(".ct").textContent);
     div.querySelector(".copy-meta").onclick = () => copy(div.querySelector(".meta-json").textContent);
 
     const btn = div.querySelector(".try-dec");
     const pp = div.querySelector(".pp");
     const result = div.querySelector(".dec-result");
     btn.onclick = async () => {
-        result.textContent = "Decrypting...";
-        try {
-            const text = await decryptWithPassphrase(pp.value, sig.payload, sig.meta);
-            result.text = text;
+    result.textContent = "Decrypting...";
+    try {
+        let text;
+        if (sig.method === "AES-GCM") {
+            text = await decryptWithPassphrase(pp.value, sig.payload, sig.meta);
+        } else if (sig.method === "VIGENERE") {
+            const cipher = atob(sig.payload);
+            text = vigDec(cipher, pp.value);
+        } else {
+            throw new Error(`Unsupported method: ${sig.method}`);
+        }
+        result.textContent = text;
         } catch {
             result.textContent = "Failed to decrypt (wrong passphrase or corrupted data).";
         }
@@ -117,7 +127,7 @@ let lastSeenId = null;
 const latestBox = byId("latest");
 
 async function loadLatest(initial = false) {
-    const tag = (byId("latestFilerTag")?.value || "").trim();
+    const tag = (byId("latestFilterTag")?.value || "").trim();
     const params = new URLSearchParams();
     params.set("limit", "50");
     if (lastSeenId && !initial) params.set("since_id", String(lastSeenId));
@@ -144,7 +154,7 @@ async function loadLatest(initial = false) {
         });
     } catch (e) {
         console.error(e);
-        if (inital && !latestBox.hasChildNodes()) {
+        if (initial && !latestBox.hasChildNodes()) {
             latestBox.innerHTML = `<div class="meta">Failed to load latest: ${e.message}</div>`;
         }
     }
@@ -156,8 +166,11 @@ byId("btn-latest").onclick = async () => {
 
 let autoTimer = null;
 byId("latestAuto").onchange = (e) => {
-    if(e.target.checked) {
+    if (e.target.checked) {
         loadLatest(true);
+        autoTimer = setInterval(() => loadLatest(false), 15000);
+    } else if (autoTimer) {
+        clearInterval(autoTimer);
         autoTimer = null;
     }
 };
@@ -165,7 +178,6 @@ byId("latestAuto").onchange = (e) => {
 loadLatest(true);
 
 //UI TIME NOW
-const byId = (id) => document.getElementById(id);
 
 byId("btn-post").onclick = async () => {
     const text = byId("plaintext").value.trim();
@@ -181,11 +193,23 @@ byId("btn-post").onclick = async () => {
         return;
     }
     try {
-        const { payload, meta } = await encryptWithPassphrase(pass, text);
-        if (tag) meta.tag = tag;
-        if (ttlStr) meta.ttl_days = parseInt(ttlStr, 10);
+        let body;
+        if (mode === "AES-GCM") {
+            const { payload, meta } = await encryptWithPassphrase(pass, text);
+            if (tag) meta.tag = tag;
+            if (ttlStr) meta.ttl_days = parseInt(ttlStr, 10);
+            body = { method: "AES-GCM", payload, meta, author_hint: author };
+        } else if (mode === "VIGENERE") {
+            const cipher = vigEnc(text, pass);     // letters-only
+            const payload = btoa(cipher);          // base64 for transport
+            const meta = {};
+            if (tag) meta.tag = tag;
+            if (ttlStr) meta.ttl_days = parseInt(ttlStr, 10);
+            body = { method: "VIGENERE", payload, meta, author_hint: author };
+        } else {
+            throw new Error(`Unsupported mode: ${mode}`);
+        }
         
-        const body = { method: "AES-GCM", payload, meta, author_hint: author };
         const res = await fetch(`${window.API_BASE}/signals`, {
             method: "POST", headers: {"Content-Type":"application/json"},
             body: JSON.stringify(body)
@@ -222,7 +246,7 @@ byId("btn-fetch").onclick = async () => {
             </div>
             <details>
                 <summary>ciphertext (base64)</summary>
-                <pre class="ct">${sig,payload}</pre>
+                <pre class="ct">${sig.payload}</pre>
                 <button class="copy-ct">Copy ciphertext</button>
             </details>
             <details>
@@ -239,7 +263,7 @@ byId("btn-fetch").onclick = async () => {
 
         const copy = (text) => navigator.clipboard?.writeText(text);
         div.querySelector(".copy-ct").onclick = () => copy(div.querySelector(".ct").textContent);
-        div.querySelector(".copy-ct").onclick = () => copy(div.querySelector(".meta-json").textContent);
+        div.querySelector(".copy-meta").onclick = () => copy(div.querySelector(".meta-json").textContent);
 
         const btn = div.querySelector(".try-dec");
         const pp = div.querySelector(".pp");

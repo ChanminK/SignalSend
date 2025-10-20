@@ -29,7 +29,7 @@ def init_db():
         except Exception:
             pass
         try:
-            c.execute("ALTER TABLE signals ADD COLUMN expires_at INTEGER:")
+            c.execute("ALTER TABLE signals ADD COLUMN expires_at INTEGER;")
         except Exception:
             pass
         #extra stuff just in case
@@ -47,8 +47,8 @@ def insert_signal(created_at:int, method:str, payload_b64:str, meta_json:str,
     with get_conn() as c:
         cur = c.cursor()
         cur.execute(
-            "INSERT INTO signals (created_at,method,payload_b64,meta_json,author_hint,size_bytes, tag) VALUES (?,?,?,?,?,?,?)",
-            (created_at, method, payload_b64, meta_json, author_hint, size_bytes, tag)
+            "INSERT INTO signals (created_at,method,payload_b64,meta_json,author_hint,size_bytes,tag,expires_at) VALUES (?,?,?,?,?,?,?,?)",
+            (created_at, method, payload_b64, meta_json, author_hint, size_bytes, tag, expires_at)
         )
         c.commit()
         return cur.lastrowid
@@ -90,5 +90,5 @@ def select_random(n:int=10, tag:str|None=None, now:int|None=None):
 
 def cleanup_expired(now:int):
     with get_conn() as c:
-        c.execute("DELETE FROM signals WHERE expries_at IS NOT NULL AND expires_at <= ?", (now,))
+        c.execute("DELETE FROM signals WHERE expires_at IS NOT NULL AND expires_at <= ?", (now,))
         c.commit()

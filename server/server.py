@@ -4,6 +4,8 @@ import time, base64, json
 
 from db import init_db, insert_signal, select_latest, select_random
 
+from collections import deque, defaultdict
+from time import time as now
 
 RATE_WINDOW_SEC = 60
 RATE_MAX_POSTS = 30
@@ -65,12 +67,12 @@ def post_signal():
         if not (isinstance(meta["salt"], str) and is_base64(meta["salt"])):
             return jsonify({"error": "meta.salt must be base64"}), 400
         
-        meta_json = json.dumps(meta)
-        size_bytes = len(payload.encode("utf-8"))
-        tag = meta.get("tag")
-        if tag is not None:
-            if not isinstance(tag, str) or len(tag) > 64:
-                return jsonify({"error": "meta.tag must be a string up to 64 chars"}), 400
+    meta_json = json.dumps(meta)
+    size_bytes = len(payload.encode("utf-8"))
+    tag = meta.get("tag")
+    if tag is not None:
+        if not isinstance(tag, str) or len(tag) > 64:
+            return jsonify({"error": "meta.tag must be a string up to 64 chars"}), 400
 
     # Getting TTL handled
     expires_at = None
@@ -84,17 +86,17 @@ def post_signal():
         except Exception:
             return jsonify({"error": "meta.ttl_days must be an integer between 1 and 365"}), 400
 
-        new_id = insert_signal(
-            created_at=int(time.time()),
-            method=method,
-            payload_b64=payload,
-            meta_json=meta_json,
-            author_hint=author_hint,
-            size_bytes=size_bytes,
-            tag=tag,
-            expires_at=expires_at
-        )
-        return jsonify({"id": new_id}), 201
+    new_id = insert_signal(
+        created_at=int(time.time()),
+        method=method,
+        payload_b64=payload,
+        meta_json=meta_json,
+        author_hint=author_hint,
+        size_bytes=size_bytes,
+        tag=tag,
+        expires_at=expires_at
+    )
+    return jsonify({"id": new_id}), 201
     
 @app.get("/signals")
 def get_signals():
@@ -130,7 +132,7 @@ def get_random():
     n = min(max(n,1), 50)
     tag = request.args.get("tag")
 
-    row = int(time.time())
+    now = int(time.time())
     rows = select_random(n, tag=tag, now=now)
     return jsonify([
         {
