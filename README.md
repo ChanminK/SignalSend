@@ -2,7 +2,6 @@
 Siege Week 7 Project: Signal Send!
 
 A cool little project where you can both send and recieve signals! 
-
 But you've gotta decypt them :D
 
 OFFICAL EXPLANATION:
@@ -26,19 +25,13 @@ __________________________________________________________________________
 
 Tech Stack:
 
-HTML/CSS/JS — the UI in the browser.
-
-Web Crypto API — does AES-GCM encryption/decryption in the browser.
-
-Flask — simple Python web API to accept and serve signals.
-
-Flask-CORS — lets the browser call your API from another domain.
-
-SQLite — file-based database to store encrypted signals.
-
-Render — hosts the Flask API + keeps the SQLite file on a persistent disk.
-
-Vercel — hosts the static frontend (HTML/JS/CSS).
+__HTML/CSS/JS__: the UI in the browser.
+__Web Crypto API__: does AES-GCM encryption/decryption in the browser.
+__Flask__: simple Python web API to accept and serve signals.
+__Flask-CORS__: lets the browser call your API from another domain.
+__SQLite__: file-based database to store encrypted signals.
+__Render__: hosts the Flask API + keeps the SQLite file on a persistent disk.
+__Vercel__: hosts the static frontend (HTML/JS/CSS).
 
 <details><summary>HEY</summary>
 https://www.youtube.com/watch?v=oHg5SJYRHA0

@@ -1,41 +1,33 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import time, base64, json
-import os
-from db import init_db, insert_signal, select_latest, select_random
-
-if __name__ == "__main__":
-    init_db()
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
-
-from flask_cors import CORS
-CORS(app, resources={r"/*": {"origins": [
-    "http://127.0.0.1:8080",
-    "http://localhost:8080",
-    "https://your-frontend.vercel.app"
-]}})
+import os, time, base64, json
 
 from collections import deque, defaultdict
 from time import time as now
 
+from db import init_db, insert_signal, select_latest, select_random
+
+app = Flask(__name__)
+
+CORS(app, resources={r"/*": {"origins": [
+    "http://127.0.0.1:8080",
+    "http://localhost:8080",
+    "https://signal-send.vercel.app"
+]}})
+
 RATE_WINDOW_SEC = 60
 RATE_MAX_POSTS = 30
-
 _ip_hits = defaultdict(deque)
 
 def too_many_posts(ip: str) -> bool:
     q = _ip_hits[ip]
     t = now()
-    # prune old timestamps
     while q and t - q[0] > RATE_WINDOW_SEC:
         q.popleft()
     if len(q) >= RATE_MAX_POSTS:
         return True
     q.append(t)
     return False
-
-app = Flask(__name__)
-CORS(app)
 
 MAX_PAYLOAD_LEN = 16_384
 ALLOWED_METHODS = {"AES-GCM", "VIGENERE"}
@@ -160,4 +152,4 @@ def get_random():
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
