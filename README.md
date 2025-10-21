@@ -1,7 +1,7 @@
 # SignalSend
 Siege Week 7 Project: Signal Send!
 
-# NOTE:
+__NOTE__:
 This project is hosted on _React_ which turns on after like a minute of activity bc free plan, so please be patient!
 
 A cool little project where you can both send and recieve signals! 
