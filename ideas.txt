@@ -42,3 +42,7 @@ STRETCH GOALS:
     PostgreSQL + proper indices.
     Attachments: client-side encrypted blobs stored in S3/minio.
     Admin/report endpoints and a small admin page.
+
+
+WHY DOESNT REACT WANNA COOPERATE MAN
+Y'know what fine vercel full it is

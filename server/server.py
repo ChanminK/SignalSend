@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import time, base64, json
 import os
+from db import init_db, insert_signal, select_latest, select_random
 
 if __name__ == "__main__":
     init_db()
@@ -13,8 +14,6 @@ CORS(app, resources={r"/*": {"origins": [
     "http://localhost:8080",
     "https://your-frontend.vercel.app"
 ]}})
-
-from db import init_db, insert_signal, select_latest, select_random
 
 from collections import deque, defaultdict
 from time import time as now
