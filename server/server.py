@@ -10,9 +10,9 @@ from db import init_db, insert_signal, select_latest, select_random
 app = Flask(__name__)
 
 CORS(app, resources={r"/*": {"origins": [
-    "http://127.0.0.1:8080",
+    "https://signal-send.vercel.app",
     "http://localhost:8080",
-    "https://signal-send.vercel.app"
+    "http://127.0.0.1:8080"
 ]}})
 
 RATE_WINDOW_SEC = 60
